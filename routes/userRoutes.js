@@ -36,6 +36,6 @@ router.put("/profile", userProtect, updateUserProfile);
 // @access  Private
 router.delete("/profile", userProtect, deleteUser);
 
-router.get("/logout", userProtect, logoutUser)
+router.post("/logout", userProtect, logoutUser)
 
 export default router;

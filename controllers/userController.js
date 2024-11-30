@@ -105,9 +105,10 @@ export const logoutUser = async (req, res) => {
     res.cookie("user_jwt", "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 0, // Set the maxAge to 0 to expire the cookie
+      sameSite: "None",
+      maxAge: 0,
     });
+    res.setHeader("Cache-Control", "no-store");
 
     res.status(200).json({
       success: true,

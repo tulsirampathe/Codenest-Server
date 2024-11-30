@@ -42,6 +42,12 @@ app.use(
   })
 );
 
+app.use((req, res, next) => {
+  console.log("Cookies:", req.cookies);
+  next();
+});
+
+
 // Rate limiter to prevent abuse
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

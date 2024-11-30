@@ -247,10 +247,10 @@ export const logoutAdmin = async (req, res) => {
     res.cookie("admin_jwt", "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 0, // immediately expire the cookie
+      sameSite: "None",
+      maxAge: 0,
     });
-
+    res.setHeader("Cache-Control", "no-store");
     res.status(200).json({
       success: true,
       message: "Logged out successfully",

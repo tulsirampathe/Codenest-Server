@@ -27,6 +27,6 @@ router.put("/profile", adminProtect, updateAdminProfile);
 
 router.delete("/profile", adminProtect, deleteAdmin);
 
-router.get("/logout", adminProtect, logoutAdmin);
+router.post("/logout", adminProtect, logoutAdmin);
 
 export default router;
