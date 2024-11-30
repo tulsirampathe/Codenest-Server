@@ -4,8 +4,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon app.js",
-    "build": "npm install"
+    "start": "nodemon app.js"
   },
   "keywords": [],
   "author": "",
