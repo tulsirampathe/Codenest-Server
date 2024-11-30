@@ -26,9 +26,9 @@ export const registerAdmin = async (req, res) => {
     const token = generateToken(admin._id);
     res.cookie("admin_jwt", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // ensures secure cookies in production
-      sameSite: "strict",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "None",
+      maxAge: 60 * 60,
     });
 
     const host = {
@@ -65,8 +65,8 @@ export const loginAdmin = async (req, res) => {
       res.cookie("admin_jwt", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        sameSite: "None",
+        maxAge: 60 * 60,
       });
 
       res.status(200).json({
