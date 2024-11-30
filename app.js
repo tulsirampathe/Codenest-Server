@@ -49,11 +49,11 @@ app.use((req, res, next) => {
 
 
 // Rate limiter to prevent abuse
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
-});
-app.use(limiter);
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 100, // Limit each IP to 100 requests per window
+// });
+// app.use(limiter);
 
 // JSON body parser
 app.use(express.json());
