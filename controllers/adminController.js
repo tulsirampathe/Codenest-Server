@@ -31,17 +31,10 @@ export const registerAdmin = async (req, res) => {
       maxAge: 60 * 60 * 1000, // 1 hour
     });
 
-    const host = {
-      _id: admin._id,
-      username: admin.username,
-      email: admin.email,
-      token,
-    };
-
     res.status(200).json({
       success: true,
       message: "Admin registered successfully",
-      host,
+      host : admin,
     });
   } catch (error) {
     res.status(500).json({
