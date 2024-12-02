@@ -23,8 +23,17 @@ const adminSchema = new Schema(
     },
     password: {
       type: String,
-      required: true,
       minlength: [6, "Password must be at least 6 characters"],
+      required: function () {
+        return !this.isGoogleLogin; // Only require password if not a Google login
+      },
+    },
+    isGoogleLogin: {
+      type: Boolean,
+      default: false, // True for Google login users
+    },
+    picture: {
+      type: String,
     },
     createdAt: {
       type: Date,

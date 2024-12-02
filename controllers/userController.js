@@ -1,5 +1,79 @@
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
+import { google } from "googleapis";
+import axios from "axios";
+
+export const loginWithGoogleUser = async (req, res) => {
+  const code = req.query.code;
+
+  // Initialize oauth2Client
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    "postmessage"
+  );
+
+  try {
+    // 1. Exchange the authorization code for tokens
+    const googleRes = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(googleRes.tokens);
+
+    // 2. Fetch user details from Google
+    const userRes = await axios.get(
+      `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleRes.tokens.access_token}`
+    );
+    const { email, name, picture } = userRes.data;
+
+    // 3. Check if the user exists
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // New user - handle Google-based signup
+      user = await User.create({
+        email,
+        username: name,
+        picture,
+        isGoogleLogin: true,
+      });
+      console.log("New user signed up via Google.");
+    } else if (!user.isGoogleLogin) {
+      // If the user registered traditionally, update their record for Google login
+      user.isGoogleLogin = true;
+      user.picture = picture; // Update picture from Google
+      await user.save();
+      console.log("Existing user enabled Google login.");
+    }
+
+    // 4. Generate a JWT token
+    const token = generateToken(user._id);
+
+    // 5. Set the JWT as a cookie
+    res.cookie("admin_jwt", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "None",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+
+    // 6. Respond with success
+    res.status(200).json({
+      success: true,
+      message: "Logged in successfully via Google.",
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "An error occurred during Google login.",
+    });
+  }
+};
 
 // @desc    Register a new user
 // @route   POST /api/users/register
@@ -12,7 +86,7 @@ export const registerUser = async (req, res) => {
     if (userExists) {
       return res.status(400).json({
         success: false,
-        message: "User already exists",
+        message: "User already exists. Please log in.",
       });
     }
 
@@ -28,7 +102,7 @@ export const registerUser = async (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "None",
-        maxAge: 60 * 60 * 1000, // 1 hour
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       });
 
       return res.status(200).json({
@@ -69,7 +143,7 @@ export const loginUser = async (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "None",
-        maxAge: 60 * 60 * 1000, // 1 hour
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       });
 
       return res.status(200).json({

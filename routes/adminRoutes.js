@@ -8,10 +8,13 @@ import {
   getAdminChallenges,
   logoutAdmin,
   deleteChallengeFromAdmin,
+  loginWithGoogleAdmin,
 } from "../controllers/adminController.js";
 import { adminProtect } from "../middleware/adminProtect.js"; // Middleware for authorization
 
 const router = express.Router();
+
+router.post("/loginWithGoogle", loginWithGoogleAdmin);
 
 router.post("/register", registerAdmin);
 
@@ -19,7 +22,11 @@ router.post("/login", loginAdmin);
 
 router.get("/challenges", adminProtect, getAdminChallenges);
 
-router.delete("/challenge/delete/:challengeId", adminProtect, deleteChallengeFromAdmin);
+router.delete(
+  "/challenge/delete/:challengeId",
+  adminProtect,
+  deleteChallengeFromAdmin
+);
 
 router.get("/profile", adminProtect, getAdminProfile);
 

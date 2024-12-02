@@ -1,6 +1,76 @@
 import jwt from "jsonwebtoken";
 import Admin from "../models/adminModel.js";
 import Challenge from "../models/challengeModel.js";
+import { google } from "googleapis";
+import axios from "axios";
+
+export const loginWithGoogleAdmin = async (req, res) => {
+  const code = req.query.code;
+
+  // Initialize oauth2Client
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    "postmessage"
+  );
+
+  try {
+    // 1. Exchange the authorization code for tokens
+    const googleRes = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(googleRes.tokens);
+
+    // 2. Fetch user details from Google
+    const adminRes = await axios.get(
+      `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleRes.tokens.access_token}`
+    );
+    const { email, name, picture } = adminRes.data;
+
+    // 3. Check if the admin exists
+    let admin = await Admin.findOne({ email });
+
+    if (!admin) {
+      // New user - handle Google-based signup
+      admin = await Admin.create({
+        email,
+        username: name,
+        picture,
+        isGoogleLogin: true,
+      });
+      console.log("New user signed up via Google.");
+    } else if (!admin.isGoogleLogin) {
+      // If the user registered traditionally, update their record for Google login
+      admin.isGoogleLogin = true;
+      admin.picture = picture; // Update picture from Google
+      await admin.save();
+      console.log("Existing user enabled Google login.");
+    }
+
+    // 4. Generate a JWT token
+    const token = generateToken(admin._id);
+
+    // 5. Set the JWT as a cookie
+    res.cookie("admin_jwt", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "None",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+
+    // 6. Respond with success
+    res.status(200).json({
+      success: true,
+      message: "Logged in successfully via Google.",
+      host: admin,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "An error occurred during Google login.",
+    });
+  }
+};
 
 // @desc    Register a new admin
 // @route   POST /api/admin/register
@@ -9,11 +79,11 @@ export const registerAdmin = async (req, res) => {
   const { username, email, password } = req.body;
 
   try {
-    const adminExists = await Admin.findOne({ email });
+    const adminExists = await Admin.findOne({ email: email });
     if (adminExists) {
       return res.status(400).json({
         success: false,
-        message: "Admin already exists",
+        message: "Admin already exists. Please log in.",
       });
     }
 
@@ -24,17 +94,18 @@ export const registerAdmin = async (req, res) => {
     });
 
     const token = generateToken(admin._id);
+
     res.cookie("admin_jwt", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "None",
-      maxAge: 60 * 60 * 1000, // 1 hour
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 
     res.status(200).json({
       success: true,
       message: "Admin registered successfully",
-      host : admin,
+      host: admin,
     });
   } catch (error) {
     res.status(500).json({
@@ -53,26 +124,36 @@ export const loginAdmin = async (req, res) => {
 
   try {
     const admin = await Admin.findOne({ email }).populate("challengesCreated");
-    if (admin && (await admin.comparePassword(password))) {
-      const token = generateToken(admin._id);
-      res.cookie("admin_jwt", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "None",
-        maxAge: 60 * 60 * 1000, // 1 hour
-      });
 
-      res.status(200).json({
-        success: true,
-        message: `Welcome Back, ${admin.username}`,
-        host: admin,
-      });
-    } else {
-      res.status(401).json({
+    if (!admin) {
+      return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid email or password.",
       });
     }
+
+    const isMatch = await admin.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password.",
+      });
+    }
+
+    const token = generateToken(admin._id);
+
+    res.cookie("admin_jwt", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "None",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Welcome Back, ${admin.username}`,
+      host: admin,
+    });
   } catch (error) {
     res.status(500).json({
       success: false,

@@ -3,6 +3,7 @@ import {
   deleteUser,
   getUserProfile,
   loginUser,
+  loginWithGoogleUser,
   logoutUser,
   registerUser,
   updateUserProfile,
@@ -10,6 +11,8 @@ import {
 import { userProtect } from "../middleware/userProtect.js";
 
 const router = express.Router();
+
+router.post("/loginWithGoogle", loginWithGoogleUser);
 
 // @route   POST /api/users/register
 // @desc    Register a new user
@@ -36,6 +39,6 @@ router.put("/profile", userProtect, updateUserProfile);
 // @access  Private
 router.delete("/profile", userProtect, deleteUser);
 
-router.post("/logout", userProtect, logoutUser)
+router.post("/logout", userProtect, logoutUser);
 
 export default router;
