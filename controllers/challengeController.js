@@ -236,7 +236,7 @@ export const calculateLeaderboard = async (req, res) => {
       },
       { upsert: true, new: true }
     )
-      .populate("participants.user", "username email") 
+      .populate("participants.user", "username email")
       .populate("challenge", "title")
       .exec();
 
@@ -448,9 +448,19 @@ export const getChallengeById = async (req, res) => {
         .json({ success: false, message: "Invalid Challenge ID" });
     }
 
-    const challenge = await Challenge.findById(id).populate(
-      "questions participants"
-    );
+    const challenge = await Challenge.findById(id)
+      .populate({
+        path: "questions",
+        populate: [
+          {
+            path: "testCases",
+          },
+          {
+            path: "examples",
+          },
+        ],
+      })
+      .populate("participants");
     if (!challenge) {
       return res
         .status(404)

@@ -36,7 +36,7 @@ app.use(cookieParser());
 // CORS configuration
 app.use(
   cors({
-    origin: process.env.CLIENT_URL, // Your Vercel frontend URL
+    origin: process.env.CLIENT_URL, 
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true, // Allow cookies to be sent
   })
