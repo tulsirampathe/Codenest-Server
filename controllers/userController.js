@@ -4,12 +4,16 @@ import { google } from "googleapis";
 import axios from "axios";
 
 export const loginWithGoogleUser = async (req, res) => {
-  const code = req.query.code;
+  const { code } = req.body;
+
+  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+
+  const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 
   // Initialize oauth2Client
   const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
+    GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET,
     "postmessage"
   );
 

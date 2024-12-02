@@ -42,10 +42,10 @@ app.use(
   })
 );
 
-app.use((req, res, next) => {
-  console.log("Cookies:", req.cookies);
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log("Cookies:", req.cookies);
+//   next();
+// });
 
 
 // Rate limiter to prevent abuse
