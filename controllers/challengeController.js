@@ -65,7 +65,7 @@ export const createChallenge = async (req, res) => {
 // @route   POST /api/challenge/join
 // @access  Private
 export const joinChallengeWithKey = async (req, res) => {
-  const { challengeKey } = req.body;
+  let { challengeKey } = req.body;
   const userId = req.user._id;
 
   // Remove whitespace from the challenge key
