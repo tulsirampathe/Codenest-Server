@@ -52,7 +52,7 @@ export const loginWithGoogleUser = async (req, res) => {
     const token = generateToken(user._id);
 
     // 5. Set the JWT as a cookie
-    res.cookie("admin_jwt", token, {
+    res.cookie("user_jwt", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "None",
