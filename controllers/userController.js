@@ -63,11 +63,7 @@ export const loginWithGoogleUser = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Logged in successfully via Google.",
-      user: {
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-      },
+      user,
     });
   } catch (error) {
     console.error(error);
@@ -112,11 +108,7 @@ export const registerUser = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: "User registered successfully",
-        user: {
-          _id: user._id,
-          username: user.username,
-          email: user.email,
-        },
+        user,
       });
     } else {
       res.status(400).json({
@@ -153,11 +145,7 @@ export const loginUser = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: "User logged in successfully",
-        user: {
-          _id: user._id,
-          username: user.username,
-          email: user.email,
-        },
+        user,
       });
     } else {
       res.status(401).json({
@@ -210,11 +198,7 @@ export const getUserProfile = async (req, res) => {
     if (user) {
       res.status(200).json({
         success: true,
-        user: {
-          _id: user._id,
-          username: user.username,
-          email: user.email,
-        },
+        user,
       });
     } else {
       res.status(404).json({
