@@ -79,11 +79,11 @@ export const joinChallengeWithKey = async (req, res) => {
         .json({ success: false, message: "Invalid challenge key" });
     }
 
-    // if (challenge.participants.includes(userId)) {
-    //   return res
-    //     .status(400)
-    //     .json({ success: false, message: "User already joined the challenge" });
-    // }
+    if (challenge.participants.includes(userId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User already joined the challenge" });
+    }
 
     // Add user to the challenge participants
     challenge.participants.push(userId);
