@@ -14,7 +14,6 @@ export const submitSolution = async (req, res) => {
     const { challenge, question, code, language } = req.body;
     const user = req.user._id;
 
-    // Validate required fields
     if (!challenge || !question || !code || !language) {
       return res.status(400).json({
         success: false,
@@ -22,7 +21,6 @@ export const submitSolution = async (req, res) => {
       });
     }
 
-    // Check if the user has already passed all test cases for this question
     const existingSubmission = await Submission.findOne({
       user,
       challenge,
@@ -30,11 +28,9 @@ export const submitSolution = async (req, res) => {
       status: "pass",
     });
 
-    // Fetch the question data
     const questionData = await Question.findById({ _id: question });
-
-    // Fetch the test cases for the question
     const testCases = await TestCase.find({ question });
+
     if (!testCases.length) {
       return res.status(404).json({
         success: false,
@@ -42,22 +38,20 @@ export const submitSolution = async (req, res) => {
       });
     }
 
-    let testCaseResults = [];
-    let allPassed = true;
+    const {
+      totalTestCases,
+      passedTestCases,
+      errorDetails,
+      results: testCaseResults,
+    } = await executeCode({
+      code,
+      language,
+      testCases,
+    });
 
-    // Execute code against the  test cases
-    if (testCases && testCases.length > 0) {
-      allPassed = await executeCode({
-        code,
-        language,
-        testCases, // Pass the  test cases for execution
-      });
-    }
-
-    // Determine status based on test case results
+    const allPassed = passedTestCases === totalTestCases;
     const status = allPassed ? "pass" : "fail";
 
-    // Create a new submission record in the database
     const submission = await Submission.create({
       user,
       challenge,
@@ -72,34 +66,33 @@ export const submitSolution = async (req, res) => {
         : 0,
     });
 
-    // If all test cases pass, update the user's progress (if not already passed)
     if (allPassed && !existingSubmission) {
-      const progress = await ChallengeProgress.findOneAndUpdate(
+      await ChallengeProgress.findOneAndUpdate(
         { user, challenge },
         {
           $addToSet: { solvedQuestions: question },
           $set: { lastUpdated: new Date() },
-          $inc: { score: questionData.maxScore }, // Increment score by the question's max score
+          $inc: { score: questionData.maxScore },
         },
         { upsert: true, new: true }
       );
     }
 
-    // Prepare response
-    const response = {
-      success: true,
-      message: allPassed
-        ? "Solution submitted successfully. All test cases passed."
-        : "Solution submitted. Some test cases failed.",
-      status,
-      submission,
-      testCaseResults, // Include detailed results for each test case
-    };
+    const message = allPassed
+      ? "All test cases passed."
+      : `Some test cases failed. Passed ${passedTestCases} out of ${totalTestCases}.`;
 
-    // Send response
-    res.status(allPassed ? 201 : 400).json(response);
+    res.status(200).json({
+      success: true,
+      message,
+      status,
+      totalTestCases,
+      passedTestCases,
+      errorDetails,
+      testCaseResults,
+    });
   } catch (error) {
-    console.log(error);
+    console.error(error);
 
     res.status(500).json({
       success: false,
