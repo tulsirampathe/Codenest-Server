@@ -1,17 +1,17 @@
+import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
-import morgan from "morgan";
 import helmet from "helmet";
-import compression from "compression";
-import rateLimit from "express-rate-limit";
+import morgan from "morgan";
 import connectDB from "./config.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import challengeRoutes from "./routes/challengeRoutes.js";
 import questionRoutes from "./routes/questionRoutes.js";
 import submissionRoutes from "./routes/submissionRoutes.js";
 import testCaseRoutes from "./routes/testCaseRoutes.js";
+import timeRoutes from "./routes/timeRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import { errorHandler } from "./utils/errorHandler.js";
 
@@ -36,7 +36,7 @@ app.use(cookieParser());
 // CORS configuration
 app.use(
   cors({
-    origin: process.env.CLIENT_URL, 
+    origin: process.env.CLIENT_URL,
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true, // Allow cookies to be sent
   })
@@ -46,7 +46,6 @@ app.use(
 //   console.log("Cookies:", req.cookies);
 //   next();
 // });
-
 
 // Rate limiter to prevent abuse
 // const limiter = rateLimit({
@@ -78,6 +77,8 @@ app.use("/question", questionRoutes);
 app.use("/testCase", testCaseRoutes);
 app.use("/submission", submissionRoutes);
 
+app.use("/time", timeRoutes); // the time route
+
 // Home route
 app.get("/", (req, res) => {
   res.send("Welcome to the coding platform. Happy Coding! 💖");
@@ -88,7 +89,9 @@ app.use(errorHandler);
 
 // Start the server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+  console.log(
+    `🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`
+  );
 });
 
 export default app;

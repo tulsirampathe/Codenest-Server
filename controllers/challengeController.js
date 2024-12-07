@@ -6,7 +6,6 @@ import ChallengeProgress from "../models/challengeProgressModel.js";
 import Leaderboard from "../models/leaderboardModel.js";
 import Question from "../models/questionModel.js";
 import User from "../models/userModel.js";
-import { log } from "console";
 
 // Helper function to generate challenge key
 const generateChallengeKey = () => crypto.randomBytes(4).toString("hex");
@@ -79,15 +78,25 @@ export const joinChallengeWithKey = async (req, res) => {
         .json({ success: false, message: "Invalid challenge key" });
     }
 
-    // if (challenge.participants.includes(userId)) {
-    //   return res
-    //     .status(400)
-    //     .json({ success: false, message: "User already joined the challenge" });
-    // }
+    // Check if the user already has a progress record for this challenge
+    const existingProgress = await ChallengeProgress.findOne({
+      user: userId,
+      challenge: challenge._id,
+    });
 
-    // Add user to the challenge participants
-    challenge.participants.push(userId);
-    await challenge.save();
+    // If the user has ended this challenge, prevent joining
+    if (existingProgress && existingProgress.status === "ended") {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot join this challenge as it has ended for you",
+      });
+    }
+
+    // Avoid duplicating the user in the participants list
+    if (!challenge.participants.includes(userId)) {
+      challenge.participants.push(userId);
+      await challenge.save();
+    }
 
     // Add challenge to the user's participation list
     const user = await User.findById(userId);
@@ -102,12 +111,7 @@ export const joinChallengeWithKey = async (req, res) => {
       await user.save();
     }
 
-    // Initialize ChallengeProgress for the user
-    const existingProgress = await ChallengeProgress.findOne({
-      user: userId,
-      challenge: challenge._id,
-    });
-
+    // If no progress exists, initialize a new ChallengeProgress record
     if (!existingProgress) {
       const progress = new ChallengeProgress({
         user: userId,
@@ -193,8 +197,6 @@ export const calculateLeaderboard = async (req, res) => {
     })
       .populate("user", "username email") // Populate user details
       .exec();
-
-    console.log(progressData);
 
     if (!progressData.length) {
       return res.status(404).json({
