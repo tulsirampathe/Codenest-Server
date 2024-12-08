@@ -129,17 +129,47 @@ export const getQuestionById = async (req, res) => {
 export const updateQuestion = async (req, res) => {
   try {
     const updatedData = req.body;
+
+    // Handle examples separately if provided
+    if (updatedData.examples && updatedData.examples.length > 0) {
+      let exampleIds = [];
+
+      // Loop through each example in the updated examples
+      for (const example of updatedData.examples) {
+        // If the example already exists, update it
+        if (example._id) {
+          const existingExample = await Example.findById(example._id);
+          if (existingExample) {
+            // Update the existing example
+            existingExample.set(example);
+            await existingExample.save();
+            exampleIds.push(existingExample._id);
+          }
+        } else {
+          // If the example is new (no _id), create it
+          const newExample = new Example(example);
+          await newExample.save();
+          exampleIds.push(newExample._id);
+        }
+      }
+
+      // Update the examples field with the new list of exampleIds
+      updatedData.examples = exampleIds;
+    }
+
     const question = await Question.findByIdAndUpdate(
       req.params.id,
       updatedData,
       { new: true }
     ).exec();
+
     if (!question) {
       return res.status(404).json({
         success: false,
         message: "Question not found",
       });
     }
+
     res.status(200).json({
       success: true,
       message: "Question updated successfully",

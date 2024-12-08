@@ -19,7 +19,7 @@ const challengeProgressSchema = new Schema({
   startTime: { type: Date, default: Date.now },
   endTime: { type: Date },
   score: { type: Number, default: 0 },
-  timeTaken: { type: Number }, // Time in seconds or milliseconds
+  timeTaken: { type: Number, default: 0 }, // Time in seconds or milliseconds
   penalties: { type: Number, default: 0 },
   hintsUsed: { type: Number, default: 0 },
 });
