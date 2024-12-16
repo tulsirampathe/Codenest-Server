@@ -5,18 +5,16 @@ const API = axios.create({
   baseURL: "https://emkc.org/api/v2/piston", // Base URL for the execution API
 });
 
-const handleInputForLanguage = (input, language) => {
+const handleInputForLanguage = (input = "", language) => {
   if (language === "python") {
-    // Split input by space (for space-separated values like '3 5')
     const formattedInput = input
       .split("\n")
       .map((line) => {
         if (line.trim().includes(" ")) {
-          // Handle space-separated input in Python
           return line
             .split(" ")
             .map((value) => value.trim())
-            .join("\n"); // Split by space and join each number with a newline
+            .join("\n");
         }
         return line.trim();
       })
@@ -25,20 +23,23 @@ const handleInputForLanguage = (input, language) => {
   }
 
   if (language === "javascript") {
-    // JavaScript input handling - usually string manipulation is enough
     return input
       .split("\n")
       .map((line) => line.trim())
       .join("\n");
   }
 
-  // For Java, we don't need to change much for standard input formatting
-  return input; // Default for other languages like Java
+  return input; // Default for other languages
 };
 
-export const executeCode = async ({ code, language, testCases }) => {
-  const results = []; // To store results for each test case
-  let passedTestCases = 0; // Counter for passed test cases
+export const executeCode = async ({
+  code = "",
+  language = "python",
+  testCases = [],
+  stopOnFailure = true,
+}) => {
+  const results = [];
+  let passedTestCases = 0;
   let errorDetails = null;
 
   for (let testCase of testCases) {
@@ -47,50 +48,56 @@ export const executeCode = async ({ code, language, testCases }) => {
 
     try {
       const response = await API.post("/execute", {
-        language: language,
+        language,
         version: LANGUAGE_VERSIONS[language],
         files: [{ content: code }],
         stdin: input,
       });
 
-      const { run } = response.data;
+      const { run } = response?.data || {};
+      if (!run) throw new Error("Unexpected API response format");
+
       const { output, stderr, code: execCode } = run;
 
       if (
         stderr?.trim() ||
         execCode !== 0 ||
-        output?.trim() !== expectedOutput.trim()
+        normalizeOutput(output) !== normalizeOutput(expectedOutput)
       ) {
         results.push({
           input,
           expectedOutput,
-          actualOutput: output?.trim(),
+          actualOutput: normalizeOutput(output),
           errorMessage: stderr?.trim() || "Output mismatch",
           status: "fail",
         });
         errorDetails = stderr?.trim();
-        break; // Stop further execution if a test case fails
+        if (stopOnFailure) break;
+      } else {
+        passedTestCases++;
+        results.push({
+          input,
+          expectedOutput,
+          actualOutput: normalizeOutput(output),
+          errorMessage: null,
+          status: "pass",
+        });
       }
-
-      // Test case passed
-      passedTestCases++;
-      results.push({
-        input,
-        expectedOutput,
-        actualOutput: output?.trim(),
-        errorMessage: null,
-        status: "pass",
-      });
     } catch (error) {
-      console.log("Execution error:", error);
+      console.error("Execution error:", {
+        language,
+        input,
+        error: error.message,
+        stack: error.stack,
+      });
       results.push({
         input,
         expectedOutput,
         actualOutput: null,
-        errorMessage: "Execution failed ",
+        errorMessage: error.message,
         status: "fail",
       });
-      break; // Stop further execution on API request failure
+      if (stopOnFailure) break;
     }
   }
 
