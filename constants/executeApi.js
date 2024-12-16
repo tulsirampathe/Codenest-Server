@@ -32,6 +32,8 @@ const handleInputForLanguage = (input = "", language) => {
   return input; // Default for other languages
 };
 
+const normalizeOutput = (output) => output?.toString().trim().replace(/\r\n/g, "\n");
+
 export const executeCode = async ({
   code = "",
   language = "python",
